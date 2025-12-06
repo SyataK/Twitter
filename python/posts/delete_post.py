@@ -1,8 +1,8 @@
 """
-Authenticated User Lookup (Me) - X API v2
-=========================================
-Endpoint: GET https://api.x.com/2/users/me
-Docs: https://developer.x.com/en/docs/twitter-api/users/lookup/api-reference/get-users-me
+Delete Tweet - X API v2
+=======================
+Endpoint: DELETE https://api.x.com/2/tweets/:id
+Docs: https://developer.x.com/en/docs/twitter-api/tweets/manage-tweets/api-reference/delete-tweets-id
 
 Authentication: OAuth 2.0 (User Context)
 Required env vars: CLIENT_ID, CLIENT_SECRET
@@ -24,7 +24,11 @@ client_secret = os.environ.get("CLIENT_SECRET")
 redirect_uri = "https://example.com"
 
 # Set the scopes
-scopes = ["tweet.read", "users.read", "offline.access"]
+scopes = ["tweet.read", "tweet.write", "users.read", "offline.access"]
+
+# Be sure to replace tweet-id-to-delete with the id of the Tweet you wish to delete.
+# The authenticated user must own the Tweet in order to delete it.
+post_id = "1997118644242014409"
 
 def main():
     # Step 1: Create PKCE instance
@@ -50,16 +54,12 @@ def main():
     # Step 5: Create client
     client = Client(access_token=access_token)
     
-    # Step 6: Get authenticated user info
-    # User fields are adjustable, options include:
-    # created_at, description, entities, id, location, name,
-    # pinned_tweet_id, profile_image_url, protected,
-    # public_metrics, url, username, verified, and withheld
-    response = client.users.get_me(
-        user_fields=["created_at", "description"]
-    )
+    # Step 6: Delete the tweet
+    response = client.posts.delete(post_id)
     
+    print("Response code: 200")
     print(json.dumps(response.data, indent=4, sort_keys=True))
 
 if __name__ == "__main__":
+
     main()

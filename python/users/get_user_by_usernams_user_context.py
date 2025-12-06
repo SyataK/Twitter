@@ -1,8 +1,8 @@
 """
-Authenticated User Lookup (Me) - X API v2
-=========================================
-Endpoint: GET https://api.x.com/2/users/me
-Docs: https://developer.x.com/en/docs/twitter-api/users/lookup/api-reference/get-users-me
+User Lookup (User Context) - X API v2
+=====================================
+Endpoint: GET https://api.x.com/2/users/by
+Docs: https://developer.x.com/en/docs/twitter-api/users/lookup/api-reference/get-users-by
 
 Authentication: OAuth 2.0 (User Context)
 Required env vars: CLIENT_ID, CLIENT_SECRET
@@ -25,6 +25,9 @@ redirect_uri = "https://example.com"
 
 # Set the scopes
 scopes = ["tweet.read", "users.read", "offline.access"]
+
+# Specify the usernames that you want to lookup (list, up to 100)
+usernames = ["XDevelopers", "API"]
 
 def main():
     # Step 1: Create PKCE instance
@@ -50,16 +53,22 @@ def main():
     # Step 5: Create client
     client = Client(access_token=access_token)
     
-    # Step 6: Get authenticated user info
+    # Step 6: Get users
     # User fields are adjustable, options include:
     # created_at, description, entities, id, location, name,
     # pinned_tweet_id, profile_image_url, protected,
     # public_metrics, url, username, verified, and withheld
-    response = client.users.get_me(
+    response = client.users.get_by_usernames(
+        usernames=usernames,
         user_fields=["created_at", "description"]
     )
     
-    print(json.dumps(response.data, indent=4, sort_keys=True))
+    # Access data attribute safely
+    response_data = getattr(response, 'data', None)
+    if response_data:
+        print(json.dumps(response_data, indent=4, sort_keys=True))
+    else:
+        print(json.dumps(response, indent=4, sort_keys=True))
 
 if __name__ == "__main__":
     main()

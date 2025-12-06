@@ -1,8 +1,8 @@
 """
-Authenticated User Lookup (Me) - X API v2
-=========================================
-Endpoint: GET https://api.x.com/2/users/me
-Docs: https://developer.x.com/en/docs/twitter-api/users/lookup/api-reference/get-users-me
+Pinned Lists Lookup - X API v2
+==============================
+Endpoint: GET https://api.x.com/2/users/:id/pinned_lists
+Docs: https://developer.x.com/en/docs/twitter-api/lists/pinned-lists/api-reference/get-users-id-pinned_lists
 
 Authentication: OAuth 2.0 (User Context)
 Required env vars: CLIENT_ID, CLIENT_SECRET
@@ -24,7 +24,11 @@ client_secret = os.environ.get("CLIENT_SECRET")
 redirect_uri = "https://example.com"
 
 # Set the scopes
-scopes = ["tweet.read", "users.read", "offline.access"]
+scopes = ["tweet.read", "users.read", "list.read", "offline.access"]
+
+# Be sure to replace your-user-id with your own user ID or one of an authenticated user
+# You can find a user ID by using the user lookup endpoint
+user_id = "your-user-id"
 
 def main():
     # Step 1: Create PKCE instance
@@ -50,16 +54,24 @@ def main():
     # Step 5: Create client
     client = Client(access_token=access_token)
     
-    # Step 6: Get authenticated user info
-    # User fields are adjustable, options include:
-    # created_at, description, entities, id, location, name,
-    # pinned_tweet_id, profile_image_url, protected,
-    # public_metrics, url, username, verified, and withheld
-    response = client.users.get_me(
-        user_fields=["created_at", "description"]
+    # Step 6: Get pinned lists
+    # List fields are adjustable, options include:
+    # created_at, description, owner_id,
+    # private, follower_count, member_count,
+    response = client.users.get_pinned_lists(
+        user_id,
+        list_fields=["created_at", "description", "private"]
     )
     
-    print(json.dumps(response.data, indent=4, sort_keys=True))
+    # Access data attribute (model uses extra='allow' so data should be available)
+    response_data = getattr(response, 'data', None)
+    if response_data is None:
+        # Try accessing via model_dump if data attribute doesn't exist
+        response_dict = response.model_dump() if hasattr(response, 'model_dump') else {}
+        response_data = response_dict.get('data', response_dict)
+    
+    print(f"Total Pinned Lists: {len(response_data) if isinstance(response_data, list) else 1}")
+    print(json.dumps(response_data, indent=4, sort_keys=True))
 
 if __name__ == "__main__":
     main()

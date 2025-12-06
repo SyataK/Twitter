@@ -1,8 +1,8 @@
 """
-Authenticated User Lookup (Me) - X API v2
-=========================================
-Endpoint: GET https://api.x.com/2/users/me
-Docs: https://developer.x.com/en/docs/twitter-api/users/lookup/api-reference/get-users-me
+Like a Tweet - X API v2
+======================
+Endpoint: POST https://api.x.com/2/users/:id/likes
+Docs: https://developer.x.com/en/docs/twitter-api/tweets/likes/api-reference/post-users-id-likes
 
 Authentication: OAuth 2.0 (User Context)
 Required env vars: CLIENT_ID, CLIENT_SECRET
@@ -24,7 +24,11 @@ client_secret = os.environ.get("CLIENT_SECRET")
 redirect_uri = "https://example.com"
 
 # Set the scopes
-scopes = ["tweet.read", "users.read", "offline.access"]
+scopes = ["tweet.read", "tweet.write", "users.read", "offline.access", "like.write"]
+
+# You can replace Tweet ID given with the Tweet ID you wish to like.
+# You can find a Tweet ID by using the Tweet lookup endpoint
+post_id = "post-id"
 
 def main():
     # Step 1: Create PKCE instance
@@ -50,15 +54,15 @@ def main():
     # Step 5: Create client
     client = Client(access_token=access_token)
     
-    # Step 6: Get authenticated user info
-    # User fields are adjustable, options include:
-    # created_at, description, entities, id, location, name,
-    # pinned_tweet_id, profile_image_url, protected,
-    # public_metrics, url, username, verified, and withheld
-    response = client.users.get_me(
-        user_fields=["created_at", "description"]
-    )
+    # Step 6: Get the authenticated user's ID
+    user_me = client.users.get_me()
+    user_id = user_me.data["id"]
     
+    # Step 7: Like the tweet
+    payload = {"tweet_id": post_id}
+    response = client.users.like_post(user_id, body=payload)
+    
+    print("Response code: 200")
     print(json.dumps(response.data, indent=4, sort_keys=True))
 
 if __name__ == "__main__":

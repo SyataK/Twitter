@@ -1,8 +1,8 @@
 """
-Authenticated User Lookup (Me) - X API v2
-=========================================
-Endpoint: GET https://api.x.com/2/users/me
-Docs: https://developer.x.com/en/docs/twitter-api/users/lookup/api-reference/get-users-me
+Muted Users Lookup - X API v2
+=============================
+Endpoint: GET https://api.x.com/2/users/:id/muting
+Docs: https://developer.x.com/en/docs/twitter-api/users/mutes/api-reference/get-users-muting
 
 Authentication: OAuth 2.0 (User Context)
 Required env vars: CLIENT_ID, CLIENT_SECRET
@@ -12,6 +12,7 @@ import os
 import json
 from xdk import Client
 from xdk.oauth2_auth import OAuth2PKCEAuth
+from requests.exceptions import HTTPError
 
 # The code below sets the client ID and client secret from your environment variables
 # To set environment variables on macOS or Linux, run the export commands below from the terminal:
@@ -24,7 +25,7 @@ client_secret = os.environ.get("CLIENT_SECRET")
 redirect_uri = "https://example.com"
 
 # Set the scopes
-scopes = ["tweet.read", "users.read", "offline.access"]
+scopes = ["tweet.read", "users.read", "offline.access", "mute.read"]
 
 def main():
     # Step 1: Create PKCE instance
@@ -50,16 +51,41 @@ def main():
     # Step 5: Create client
     client = Client(access_token=access_token)
     
-    # Step 6: Get authenticated user info
+    # Step 6: Get the authenticated user's ID
+    me_response = client.users.get_me()
+    user_id = me_response.data["id"]
+    
+    # Step 7: Get muted users with automatic pagination
     # User fields are adjustable, options include:
     # created_at, description, entities, id, location, name,
     # pinned_tweet_id, profile_image_url, protected,
     # public_metrics, url, username, verified, and withheld
-    response = client.users.get_me(
-        user_fields=["created_at", "description"]
-    )
-    
-    print(json.dumps(response.data, indent=4, sort_keys=True))
+    all_users = []
+    try:
+        for page in client.users.get_muting(
+            user_id,
+            max_results=100,
+            user_fields=["created_at", "description"]
+        ):
+            # Access data attribute (model uses extra='allow' so data should be available)
+            # Use getattr with fallback in case data field is missing from response
+            page_data = getattr(page, 'data', []) or []
+            all_users.extend(page_data)
+            print(f"Fetched {len(page_data)} users (total: {len(all_users)})")
+        
+        print(f"\nTotal Muted Users: {len(all_users)}")
+        print(json.dumps({"data": all_users[:5]}, indent=4, sort_keys=True))  # Print first 5 as example
+    except HTTPError as e:
+        print(f"Error occurred: {e}")
+        if hasattr(e.response, 'json'):
+            try:
+                error_data = e.response.json()
+                if 'errors' in error_data:
+                    print("Detailed errors:")
+                    print(json.dumps(error_data['errors'], indent=2))
+            except:
+                pass
+        raise
 
 if __name__ == "__main__":
     main()

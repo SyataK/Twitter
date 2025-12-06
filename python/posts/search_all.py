@@ -1,13 +1,13 @@
 """
-Recent Search - X API v2
-========================
-Endpoint: GET https://api.x.com/2/tweets/search/recent
-Docs: https://developer.x.com/en/docs/twitter-api/tweets/search/api-reference/get-tweets-search-recent
+Full-Archive Search - X API v2
+==============================
+Endpoint: GET https://api.x.com/2/tweets/search/all
+Docs: https://developer.x.com/en/docs/twitter-api/tweets/search/api-reference/get-tweets-search-all
 
 Authentication: Bearer Token (App-only)
 Required env vars: BEARER_TOKEN
 
-Note: Returns posts from the last 7 days.
+Note: Requires Academic Research access. Returns posts from the entire archive.
 This example demonstrates automatic pagination using the iterate() method
 to fetch all pages of results.
 """
@@ -19,12 +19,12 @@ from xdk import Client
 bearer_token = os.environ.get("BEARER_TOKEN")
 client = Client(bearer_token=bearer_token)
 
-query = '(from:XDevelopers -is:retweet) OR #XDevelopers'
+query = '(from:xdevelopers -is:retweet) OR #xdevelopers'
 
 def main():
     # Search with automatic pagination
     all_posts = []
-    for page in client.posts.search_recent(
+    for page in client.posts.search_all(
         query=query,
         max_results=100,  # Per page
         tweet_fields=["author_id", "created_at"]

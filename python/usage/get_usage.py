@@ -18,9 +18,17 @@ bearer_token = os.environ.get("BEARER_TOKEN")
 client = Client(bearer_token=bearer_token)
 
 def main():
-    response = client.usage.get_tweets_usage(days=7)
+    # Get usage statistics for tweets
+    # days: Number of days to retrieve usage for (default: 7)
+    # usage_fields: Fields to include in the response (optional)
+    response = client.usage.get(days=7)
     
-    print(json.dumps(response.data, indent=4, sort_keys=True))
+    # Access data attribute safely
+    response_data = getattr(response, 'data', None)
+    if response_data:
+        print(json.dumps(response_data, indent=4, sort_keys=True))
+    else:
+        print(json.dumps(response, indent=4, sort_keys=True))
 
 if __name__ == "__main__":
     main()

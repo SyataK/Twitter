@@ -1,8 +1,8 @@
 """
-Authenticated User Lookup (Me) - X API v2
-=========================================
-Endpoint: GET https://api.x.com/2/users/me
-Docs: https://developer.x.com/en/docs/twitter-api/users/lookup/api-reference/get-users-me
+Liked Tweets - X API v2
+======================
+Endpoint: GET https://api.x.com/2/users/:id/liked_tweets
+Docs: https://developer.x.com/en/docs/twitter-api/tweets/likes/api-reference/get-users-id-liked_tweets
 
 Authentication: OAuth 2.0 (User Context)
 Required env vars: CLIENT_ID, CLIENT_SECRET
@@ -24,7 +24,7 @@ client_secret = os.environ.get("CLIENT_SECRET")
 redirect_uri = "https://example.com"
 
 # Set the scopes
-scopes = ["tweet.read", "users.read", "offline.access"]
+scopes = ["tweet.read", "users.read", "like.read", "offline.access"]
 
 def main():
     # Step 1: Create PKCE instance
@@ -50,16 +50,32 @@ def main():
     # Step 5: Create client
     client = Client(access_token=access_token)
     
-    # Step 6: Get authenticated user info
-    # User fields are adjustable, options include:
-    # created_at, description, entities, id, location, name,
-    # pinned_tweet_id, profile_image_url, protected,
-    # public_metrics, url, username, verified, and withheld
-    response = client.users.get_me(
-        user_fields=["created_at", "description"]
-    )
+    # Step 6: Get the authenticated user's ID
+    user_me = client.users.get_me()
+    user_id = user_me.data["id"]
     
-    print(json.dumps(response.data, indent=4, sort_keys=True))
+    # Step 7: Get liked tweets with automatic pagination
+    # Tweet fields are adjustable.
+    # Options include:
+    # attachments, author_id, context_annotations,
+    # conversation_id, created_at, entities, geo, id,
+    # in_reply_to_user_id, lang, non_public_metrics, organic_metrics,
+    # possibly_sensitive, promoted_metrics, public_metrics, referenced_tweets,
+    # source, text, and withheld
+    all_posts = []
+    for page in client.users.get_liked_posts(
+        user_id,
+        max_results=100,
+        tweet_fields=["lang", "author_id"]
+    ):
+        # Access data attribute (model uses extra='allow' so data should be available)
+        # Use getattr with fallback in case data field is missing from response
+        page_data = getattr(page, 'data', []) or []
+        all_posts.extend(page_data)
+        print(f"Fetched {len(page_data)} posts (total: {len(all_posts)})")
+    
+    print(f"\nTotal Liked Tweets: {len(all_posts)}")
+    print(json.dumps({"data": all_posts[:5]}, indent=4, sort_keys=True))  # Print first 5 as example
 
 if __name__ == "__main__":
     main()
