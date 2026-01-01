@@ -1,3 +1,0 @@
-source 'https://rubygems.org'
-gem 'typhoeus', '~> 1.4'
-gem 'oauth', '~> 1.1'
